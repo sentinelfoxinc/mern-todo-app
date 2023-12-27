@@ -1,0 +1,27 @@
+version: '3'
+services:
+  mongodb:
+    image: 'mongo'
+    ports:
+      - 27017:27017
+    volumes:
+      - data:/data/db # Mounts a volume named 'data' to store MongoDB data
+  backend:
+    build: ./backend # Builds the backend Docker image from the ./backend directory
+    ports:
+      - 8000:8000 # Maps port 80 of the container to port 80 of the host machine
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/to-do-list
+      - JWT_SECRET=7h4t1ycbEUNUMQ8wnXWx8qB1MWiCQJxVGf
+    depends_on:
+      - mongodb # Specifies dependency on the 'mongodb' service
+  frontend:
+    build: ./frontend # Builds the frontend Docker image from the ./frontend directory
+    ports:
+      - 3000:3000 # Maps port 3000 of the container to port 3000 of the host machine
+    environment:
+      - BACKEND_HOST=backend
+    depends_on:
+      - backend # Specifies dependency on the 'backend' service
+volumes:
+  data: # Defines a named volume 'data' for MongoDB data
