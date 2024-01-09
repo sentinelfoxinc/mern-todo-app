@@ -6,6 +6,58 @@ services:
       - 27017:27017
     volumes:
       - data:/data/db # Mounts a volume named 'data' to store MongoDB data
+    hostname: mymongodb
+    labels:
+      - com.prometheus.scrape=true
+      - com.prometheus.port=9100
+
+  mongodb-exporter:
+    image: bitnami/node-exporter:latest
+    environment:
+    - MONGODB_URI=mongodb://mongodb:27017
+    ports:
+    - 9100:9100
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    depends_on:
+       - mongodb
+    hostname : mymongodb
+
+  prometheus:
+    image: "prom/prometheus" 
+    ports:
+      - "9090:9090"  
+    volumes:
+      - ./prometheus:/etc/prometheus  
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml  
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    depends_on:
+      - backend
+      - mongodb
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3001:3000"  
+    volumes:
+      - ./grafana:/var/lib/grafana  
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=password 
+      - PORT=8000
+      - GF_USERS_ALLOW_SIGN_UP=false  
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    depends_on:
+      - prometheus
+
+
   backend:
     build: ./backend # Builds the backend Docker image from the ./backend directory
     ports:
@@ -15,6 +67,14 @@ services:
       - JWT_SECRET=7h4t1ycbEUNUMQ8wnXWx8qB1MWiCQJxVGf
     depends_on:
       - mongodb # Specifies dependency on the 'mongodb' service
+    hostname: mybackendhostname
+    labels:
+      - com.prometheus.scrape=true
+      - com.prometheus.port=8000
+
+
+
+
   frontend:
     build: ./frontend # Builds the frontend Docker image from the ./frontend directory
     ports:
@@ -23,5 +83,7 @@ services:
       - BACKEND_HOST=backend
     depends_on:
       - backend # Specifies dependency on the 'backend' service
+    hostname: myfrontendhostname
+
 volumes:
   data: # Defines a named volume 'data' for MongoDB data

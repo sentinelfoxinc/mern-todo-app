@@ -1,20 +1,28 @@
-# Use the official Node.js 14 image as the base image
+# Use the Node.js base image
 FROM node
 
-# Set the working directory in the container to /app
+# Set working directory for the Node.js application
 WORKDIR /app
 
-# Copy package.json and package-lock.json to the working directory
+# Install Node Exporter
+RUN apt-get update && \
+    apt-get install -y curl && \
+    curl -LO https://github.com/prometheus/node_exporter/releases/download/v1.2.2/node_exporter-1.2.2.linux-amd64.tar.gz && \
+    tar xvf node_exporter-1.2.2.linux-amd64.tar.gz && \
+    cp node_exporter-1.2.2.linux-amd64/node_exporter /usr/local/bin/
+
+# Copy package.json to the working directory
 COPY package.json .
 
-# Install frontend dependencies
+# Install Node.js dependencies
 RUN npm install
 
-# Copy all files from the current directory to the container working directory
+# Copy the rest of the application files
 COPY . .
 
-# Expose the port the app runs on
-EXPOSE 3000
+# Expose ports for Node.js app and Node Exporter
+EXPOSE 3000  
+EXPOSE 9100  
 
-# Define the command to start the app
-CMD ["npm", "start"]
+# Start Node.js application and Node Exporter
+CMD npm start & /usr/local/bin/node_exporter
